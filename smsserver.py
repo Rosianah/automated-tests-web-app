@@ -7,11 +7,7 @@ from quart_cors import cors
 app = Quart(__name__) # create an app instance
 app = cors(app)
 
-@app.route("/file") 
-def getFile(self):
-    self.conversations = request.json
-    print(self.conversations)
-    return "Ok", 200
+
  
 class SMSInterface():
     @app.route("/") 
@@ -84,7 +80,7 @@ class SMSInterface():
         formated_string = []
         for i in items:
             if isinstance(i, list):
-                # be used to replace substrings---( re.sub(pattern,repl,string). w+ matches one or more words / characters
+                # be used to replace substrings---( re.sub(pattern,repl,string). w+ matches one or more words characters
                 [formated_string.append(re.sub("\$\w+", '', j)) for j in i]
             else:
                 formated_string.append(re.sub("\$\w+", '', i))
@@ -119,17 +115,85 @@ class SMSInterface():
 
         def run_test(self):
             # conversations from TelegramInterface.selectfile
-            testNumbers = self.load_json("testers.json")
             self.question_counter = 0
             self.test_counter = 0
-            self.conversations = self.load_json("_conversations.json")
-
             # reset conversation if not conversation reset is true
             if self.conversationReset is False:
                 self.post(self.conversations['tests'][self.test_counter]['questions'][self.question_counter])
             else:
                 self.post("reset")
                 self.conversationReset = False
+
+            comparisson = self.string_compare(expectedResponse, re.sub('<.*>', '', event.raw_text))
+            if comparisson == True:
+                testPassed = True
+
+                # if test passed, go to the next test or end the tests if the all the tests in the conversation file have been run
+                if testPassed:
+                    if self.question_counter < len(
+                            self.conversations['tests'][self.test_counter]['questions']) - 1:
+                        if event.raw_text.find('you can now start afresh') < 0:
+                            self.question_counter += 1
+                    else:
+                        self.question_counter = 0
+                        test_status = 'Test Passed'
+                        test_message = 'Test Result: ' + 'Passed'
+                        result['input'] = question
+                        result['status'] = test_status
+                        if self.test_counter < len(self.conversations['tests']) - 1:
+                            self.test_counter += 1
+                            self.conversationReset = True
+                            self.save_result(results, result, test_status, test_message)
+                        else:
+                            results['Final Test Result'] = 'Test Passed'
+                            self.test_counter = 0
+                            done = True
+                # if tests did not pass, set the test_status to failed and show where the test_failed using the test_message
+                else:
+                    test_message = 'Test Failed at : ' + str(self.question_counter)
+                    self.question_counter = 0
+                    test_status = 'Failed'
+                    result['input'] = question
+                    result['status'] = test_status
+
+                    result['expected response'] = responses
+                    result['bot response'] = event.raw_text
+
+                    result['message'] = test_message
+                    if self.test_counter < len(self.conversations['tests']) - 1:
+                        self.test_counter += 1
+                        self.conversationReset = True
+                        self.save_result(results, result, test_status, test_message)
+                    else:
+                        results['Final Test Result'] = 'Test Failed'
+                        self.test_counter = 0
+                        done = True
+
+        # if done == True, count the successful and i=unseccessful tests,save the results and disconnect from the telegram client
+        if done:
+            results["results"].append(result)
+            end = time.time()
+            results["end"] = time.asctime(time.localtime(end))
+            results["duration"] = (end - self.start) / 100
+            successful = 0
+            unsuccessful = 0
+
+            for item in results["results"]:
+                if item['test_status'] == 'Failed':
+                    unsuccessful += 1
+                else:
+                    successful += 1
+
+            results["successful"] = successful
+            results["unsuccessful"] = unsuccessful
+            final_status = "Failed" if unsuccessful > 0 else "Passed"
+            self.save_result(results, {}, final_status, test_message)
+
+@app.route("/file") 
+def getFile(self):
+    self.conversations = request.json
+    print(self.conversations)
+    return "Ok", 200
 
 #receive from the webhook // run ngrok first https:ngrok.io/tshdjsau7/receive (Put smthing like that in webhook app)
 @app.route('/receive', methods=["POST"])
