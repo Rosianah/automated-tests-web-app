@@ -113,8 +113,8 @@ class TelegramInterface():
 
             async with TelegramClient('anon', api_id, api_hash) as client:
 
-                # results = {'results': [], 'start': time.asctime(time.localtime(self.start)),
-                #         'conversations': len(self.conversations['tests'])}
+                results = {'results': [], 'start': time.asctime(time.localtime(self.start)),
+                        'conversations': len(self.conversations['tests'])}
 
                 # reset conversation if not conversation reset is true
                 if self.conversationReset is False:
@@ -281,7 +281,7 @@ class TelegramInterface():
                     finally:
                         print(tb)
 
-                await client.start()
+                client.start()
                 await client.run_until_disconnected()
 
 @app.route("/file", methods = ['POST'])
