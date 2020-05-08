@@ -4,6 +4,9 @@ import logging, json, os, telethon.sync, time, difflib, re, traceback, Levenshte
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.WARNING)
 from telethon.sync import TelegramClient, events
 from quart_cors import cors
+import tracemalloc
+
+tracemalloc.start()
 
 
 app = Quart(__name__) # create an app instance
@@ -114,18 +117,19 @@ class TelegramInterface():
             api_id = 1051818
             api_hash = 'c12711744c64b21019251856f1bd4acd'
             self.conversations = session.get('conversations')
-            print(self.conversations)
+            #print(self.conversations)
             self.id = await getId()
 
             async with TelegramClient('anon', api_id, api_hash) as client:
+                await client.start()
 
                 results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 'conversations': len(session.get('conversations')['tests'])}
 
                 # reset conversation if not conversation reset is true
                 if self.conversationReset is False:
-                    client.send_message(924925266, self.conversations['tests'][self.test_counter]['questions'][self.question_counter])
+                    await client.send_message(924925266, self.conversations['tests'][self.test_counter]['questions'][self.question_counter])
                 else:
-                    client.send_message(924925266, 'Reset')
+                    await client.send_message(924925266, 'Reset')
                     self.conversationReset = False
 
                 # wait for a response from telegram
@@ -286,7 +290,7 @@ class TelegramInterface():
                     finally:
                         print(tb)
 
-                await client.start()
+                
                 await client.run_until_disconnected()
 
 @app.route("/file", methods = ['POST'])
