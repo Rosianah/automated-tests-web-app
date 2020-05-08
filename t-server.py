@@ -22,7 +22,7 @@ class TelegramInterface():
 
     async def getFile(self):
         session['conversations'] = await request.json
-        print(session.get('conversations'))
+        #print(session.get('conversations'))
         return "Ok", 200
 
     async def getId(self):
@@ -287,13 +287,13 @@ class TelegramInterface():
                     finally:
                         print(tb)
 
-                client.start()
-                await client.run_until_disconnected()
+                await client.start()
 
 @app.route("/file", methods = ['POST'])
 async def jsonfile():
     server = TelegramInterface()
     await server.getFile()
+    await server.run_test()
     return "Ok", 200
 
 @app.route("/id", methods = ['POST'])
