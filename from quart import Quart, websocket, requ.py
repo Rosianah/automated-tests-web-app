@@ -10,22 +10,25 @@ app = Quart(__name__) # create an app instance
 app = cors(app, allow_origin="*")
 app.config['SESSION_TYPE'] = 'filesystem'
 app.secret_key = 'super secret key'
+#Session(app)
+
 
 class TelegramInterface():
     def __init__(self):
         self.conversationReset = True
         self.test_counter = 0
         self.question_counter = 0
-    
-    # async def getFile(self):
-    #     self.conversations = await request.json
-    #     #print(self.conversations)
-    #     return "Ok", 200
+        self.conversations = None
 
-    # async def getId(self):
-    #     self.id = await request.json
-    #     print(self.id)
-    #     return "Ok", 200
+    async def getFile(self):
+        session['conversations'] = await request.json
+        print(session.get('conversations'))
+        return "Ok", 200
+
+    async def getId(self):
+        self.id = await request.json
+        print(self.id)
+        return "Ok", 200
 
     def string_compare(self, first, second):
             ratio = difflib.SequenceMatcher(None, first, second).ratio()
@@ -86,7 +89,7 @@ class TelegramInterface():
         formated_string = []
         for i in items:
             if isinstance(i, list):
-                # be used to replace substrings---( re.sub(pattern,repl,string). w+ matches one or more words characters
+                # be used to replace substrings---( re.sub(pattern,repl,string). w+ matches one or more words / characters
                 [formated_string.append(re.sub("\$\w+", '', j)) for j in i]
             else:
                 formated_string.append(re.sub("\$\w+", '', i))
@@ -113,17 +116,15 @@ class TelegramInterface():
             self.start = time.time()
             api_id = 1051818
             api_hash = 'c12711744c64b21019251856f1bd4acd'
-            self.conversations = session.get('conversations')
-            print(self.conversations)
-            self.id = await getId()
 
             async with TelegramClient('anon', api_id, api_hash) as client:
 
-                results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 'conversations': len(session.get('conversations')['tests'])}
+                results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 
+                        'conversations': len(session.get('conversations')['tests'])}
 
                 # reset conversation if not conversation reset is true
                 if self.conversationReset is False:
-                    client.send_message(924925266, self.conversations['tests'][self.test_counter]['questions'][self.question_counter])
+                    client.send_message(self.id, "Hi")
                 else:
                     client.send_message(924925266, 'Reset')
                     self.conversationReset = False
@@ -286,20 +287,19 @@ class TelegramInterface():
                     finally:
                         print(tb)
 
-                await client.start()
+                client.start()
                 await client.run_until_disconnected()
 
 @app.route("/file", methods = ['POST'])
 async def jsonfile():
-    session['conversations'] = await request.json
-    #print(session.get('conversations'))
     server = TelegramInterface()
-    await server.run_test()
+    await server.getFile()
     return "Ok", 200
 
 @app.route("/id", methods = ['POST'])
 async def getId():
-    bot_id = await request.json
+    server = TelegramInterface()
+    await server.getId()
     return "Ok", 200
 
 @app.route("/", methods = ['POST'])
