@@ -1,15 +1,15 @@
 import axios from 'axios'; 
 import Button from '@material-ui/core/Button'
-import React,{Component} from 'react'
+import React, { Component } from 'react'
 
-class upload extends Component { 
-	state = { 
-		// Initially, no file is selected 
+class upload extends Component {
+	state = {
+		// Initially, no file is selected
 		selectedFile: null,
 		fileJson: null
 	}; 
 	
-	// On file select (from the pop up) 
+	// On file select (from the pop up)
 	onFileChange = async event => { 
 		
 		// Update the state 

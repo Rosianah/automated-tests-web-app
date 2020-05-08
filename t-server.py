@@ -1,4 +1,5 @@
-from quart import Quart, websocket, request         
+from quart import Quart, websocket, request, session
+from quart_session import Session        
 import logging, json, os, telethon.sync, time, difflib, re, traceback, Levenshtein, asyncio
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.WARNING)
 from telethon.sync import TelegramClient, events
@@ -7,16 +8,21 @@ from quart_cors import cors
 
 app = Quart(__name__) # create an app instance
 app = cors(app, allow_origin="*")
+app.config['SESSION_TYPE'] = 'filesystem'
+app.secret_key = 'super secret key'
+#Session(app)
+
 
 class TelegramInterface():
     def __init__(self):
         self.conversationReset = True
         self.test_counter = 0
         self.question_counter = 0
-    
+        self.conversations = None
+
     async def getFile(self):
-        self.conversations = await request.json
-        print(self.conversations)
+        session['conversations'] = await request.json
+        print(session.get('conversations'))
         return "Ok", 200
 
     async def getId(self):
@@ -113,8 +119,8 @@ class TelegramInterface():
 
             async with TelegramClient('anon', api_id, api_hash) as client:
 
-                results = {'results': [], 'start': time.asctime(time.localtime(self.start)),
-                        'conversations': len(self.conversations['tests'])}
+                results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 
+                        'conversations': len(session.get('conversations')['tests'])}
 
                 # reset conversation if not conversation reset is true
                 if self.conversationReset is False:
