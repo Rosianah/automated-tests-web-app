@@ -16,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
   },
   backButton: {
     marginRight: theme.spacing(1),
-    marginLeft:theme.spacing(24)
+    marginLeft: theme.spacing(24)
   },
   instructions: {
     marginTop: theme.spacing(4),
@@ -24,10 +24,6 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: theme.spacing(26)
   }
 }))
-
-// function runTest() {
-//   axios.post("http://localhost:5001/"); 
-// }
 
 function getSteps () {
   return ['Upload json file', 'Selecting a bot test', 'Run Test', 'Complete test']

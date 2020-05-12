@@ -4,13 +4,13 @@ import Button from '@material-ui/core/Button'
 
 class Run extends Component {
         onRunTest = event => {
-          // let axiosConfig = {
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //     "Access-Control-Allow-Origin": "*",
-          //   }
-          //   };
-          axios.post('http://localhost:5001/')
+          const axiosConfig = {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          }
+          axios.post('http://localhost:5001/', axiosConfig)
         };
 
         render () {

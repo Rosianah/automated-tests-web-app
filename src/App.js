@@ -24,12 +24,12 @@ class App extends Component {
           </AppBar>
 
           <Switch>
-            <Route exact path="/" component={Posts}/> 
+            <Route exact path="/" component={Posts}/>
             <Route path="/stepper" component={stepper}/>
             <Route path="/smsStepper" component={smsStepper}/>
-          </Switch>       
+          </Switch>
         </div>
-      </Router> 
+      </Router>
     )
   }
 }
