@@ -113,7 +113,7 @@ class SMSInterface():
         json.dump(results, res, indent=4)
         res.close
 
-    def run_test(self):
+    async def run_test(self):
         # conversations from TelegramInterface.selectfile
         self.question_counter = 0
         self.test_counter = 0
@@ -245,19 +245,19 @@ def getFile(self):
 #receive from the webhook // run ngrok first https:ngrok.io/tshdjsau7/receive (Put smthing like that in webhook app)
 @app.route('/receive', methods=["POST"])
 async def fetchText():
-    session['text'] = await request.form
+    session['text'] = await request.json
     #body = request.form.get("text")
-    print(await request.text)
+    print(await request)
     return "200"
 
 @app.route('/send', methods=["POST"])
 async def send():
     session['conversations'] = await request.json
     print(session.get('conversations'))
-    # server = SMSInterface()
-    # server.post("Hi")
-    # await fetchText()
-    # return "Ok", 200
+    server = SMSInterface()
+    server.post("1")
+    await fetchText()
+    return "Ok", 200
 
 if __name__ == "__main__":        # on running python app.py
     app.run()            
