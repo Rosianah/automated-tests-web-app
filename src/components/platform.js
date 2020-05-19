@@ -9,6 +9,9 @@ import CardMedia from '@material-ui/core/CardMedia'
 import Button from '@material-ui/core/Button'
 import Typography from '@material-ui/core/Typography'
 import { Grid } from '@material-ui/core'
+import telegram from './images/telegram.png'
+import sms from './images/sms.png'
+import whatsapp from './images/whatsapp.png'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -40,7 +43,7 @@ export default function SpacingGrid () {
                   component="img"
                   alt="Telegram logo"
                   height="350"
-                  image="https://www.userlogos.org/files/logos/fernandosantucci/telegram.png"
+                  image={telegram}
                   title="Telegram logo"
                 />
                 <CardContent>
@@ -69,7 +72,7 @@ export default function SpacingGrid () {
                   component="img"
                   alt="SMS"
                   height="350"
-                  image="https://www.dcs2way.co.uk/SiteAssets/Images/News/speech-bubble-icon.png"
+                  image={sms}
                   title="SMS"
                 />
                 <CardContent>
@@ -98,7 +101,7 @@ export default function SpacingGrid () {
                   component="img"
                   alt="WhatsApp"
                   height="350"
-                  image="http://img.talkandroid.com/uploads/2014/03/whatsapp_app_icon.png"
+                  image={whatsapp}
                   title="WhatsApp"
                 />
                 <CardContent>
