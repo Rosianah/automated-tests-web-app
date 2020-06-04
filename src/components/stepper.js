@@ -8,6 +8,7 @@ import Typography from '@material-ui/core/Typography'
 import Upload from './upload'
 import Bot from './bots'
 import Run from './run'
+import Creds from './creds'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -26,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 function getSteps () {
-  return ['Upload json file', 'Selecting a bot test', 'Run Test', 'Complete test']
+  return ['Upload json file', 'Selecting a bot test', 'Enter your details', 'Run Test', 'Complete test']
 }
 
 function getStepContent (stepIndex) {
@@ -36,8 +37,10 @@ function getStepContent (stepIndex) {
     case 1:
       return <Bot/>
     case 2:
-      return <Run/>
+      return <Creds/>
     case 3:
+      return <Run/>
+    case 4:
       return 'Complete the test'
     default:
       return 'Unknown stepIndex'

@@ -4,10 +4,7 @@ import logging, json, os, telethon.sync, time, difflib, re, traceback, Levenshte
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.WARNING)
 from telethon.sync import TelegramClient, events
 from quart_cors import cors
-import tracemalloc
-
-tracemalloc.start()
-
+from configparser import ConfigParser
 
 app = Quart(__name__) # create an app instance
 app = cors(app, allow_origin="*")
@@ -113,185 +110,191 @@ class TelegramInterface():
 
       
     async def run_test(self):
-            self.start = time.time()
-            api_id = 1051818
-            api_hash = 'c12711744c64b21019251856f1bd4acd'
-            self.conversations = session.get('conversations')
-            #print(self.conversations)
-            self.id = await getId()
+        self.start = time.time()
 
-            async with TelegramClient('anon', api_id, api_hash) as client:
-                await client.start()
+        config_object = ConfigParser()
+        config_object.read("config.ini")
+        Telegraminfo = config_object['TELEGRAMINFO']
+        api_hash = format(Telegraminfo["api_hash"])
+        api_id = format(Telegraminfo["api_id"])
+        #print(api_hash, api_id)
 
-                results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 'conversations': len(session.get('conversations')['tests'])}
+        self.conversations = session.get('conversations')
+        #print(self.conversations)
+        self.id = await getId()
 
-                # reset conversation if not conversation reset is true
-                if self.conversationReset is False:
-                    await client.send_message(924925266, self.conversations['tests'][self.test_counter]['questions'][self.question_counter])
-                else:
-                    await client.send_message(924925266, 'Reset')
-                    self.conversationReset = False
+        async with TelegramClient('anon', api_id, api_hash) as client:
+            await client.start()
 
-                # wait for a response from telegram
-                @client.on(events.NewMessage)
-                async def my_event_handler(event):
-                    try:
-                        done = False
-                        testPassed = True
-                        expectedResponses = []
+            results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 'conversations': len(session.get('conversations')['tests'])}
 
-                        if self.conversationReset:
-                            await client.send_message(id, 'Reset')
-                            self.conversationReset = False
-                        else:
-                            result = {}
-                            testtitle = 'Test ' + self.conversations['tests'][self.test_counter][
-                                'title'] + ': '  # displayed at the status bar
-                            title = str(self.test_counter + 1) + '. ' + self.conversations['tests'][self.test_counter][
-                                'title']  # will be dispalyed in the results file
-                            question = self.conversations['tests'][self.test_counter]['questions'][
-                                self.question_counter]  # question from conversation files
-                            if event.raw_text.find('you can now start afresh') < 0:
-                                expectedResponses = self.conversations['tests'][self.test_counter]['expectedResponses'][
-                                    self.question_counter]
+            # reset conversation if not conversation reset is true
+            if self.conversationReset is False:
+                await client.send_message(924925266, self.conversations['tests'][self.test_counter]['questions'][self.question_counter])
+            else:
+                await client.send_message(924925266, 'Reset')
+                self.conversationReset = False
 
-                            result['name'] = title
-                            test_message = ''
-                            test_status = ''
-                            # if any errors occur
-                            if event.sender_id == id:
-                                if event.raw_text.find('experiencing difficulty') >= 0:
-                                    # bot has crashed
-                                    test_message = 'Bot crashed at ' + question + '(' + str(self.question_counter) + ')'
-                                    test_status = 'Failed'
-                                    done = True
-                                    
-                                elif event.raw_text.find('404') >= 0:
-                                    # bot has crashed
-                                    test_message = 'Bot unreacheable, crashed at ' + question + '(' + str(
-                                        self.question_counter) + ')'
-                                    test_status = 'Failed'
-                                    done = True
-                                elif event.raw_text.find('403') >= 0:
-                                    # bot has crashed
-                                    test_message = 'Bot\'s endpoint failed with HTTP status 403, crashed at ' + question + '(' + str(
-                                        self.question_counter) + ')'
-                                    test_status = 'Failed'
-                                    done = True
-                                elif event.raw_text.find('502') >= 0:
-                                    # bot has crashed
-                                    test_message = 'Bot connection strings wrong, Bot crashed at ' + question + '(' + str(
-                                        self.question_counter) + ')'
-                                    test_status = 'Failed'
-                                    done = True
-                                elif event.raw_text.find('500') >= 0:
-                                    # bot has crashed
-                                    test_message = 'Bot code has a problem, Bot crashed at ' + question + '(' + str(
-                                        self.question_counter) + ')'
-                                    test_status = 'Failed'
-                                    done = True
-                                else:
-                                    if event.raw_text.find('timed out') < 0 and event.raw_text.find(
-                                            'endpoint failed') and event.raw_text.find('.jpg') < 0 and event.raw_text.find(
-                                            '.png') < 0:
-                                        if event.raw_text.find('you can now start afresh') < 0:
-                                            responses = self.getExpectedtext(expectedResponses)
-                                            # calll the string-comapre method. Compare's string in expected response and the rawText from the bot
-                                            if isinstance(responses, list):
-                                                for expectedResponse in responses:
-                                                    comparisson = self.string_compare(expectedResponse,
-                                                                                    re.sub('<.*>', '', event.raw_text))
-                                                    if comparisson == True:
-                                                        testPassed = True
+            # wait for a response from telegram
+            @client.on(events.NewMessage)
+            async def my_event_handler(event):
+                try:
+                    done = False
+                    testPassed = True
+                    expectedResponses = []
 
-                                        # if test passed, go to the next test or end the tests if the all the tests in the conversation file have been run
-                                        if testPassed:
-                                            if self.question_counter < len(
-                                                    self.conversations['tests'][self.test_counter]['questions']) - 1:
-                                                if event.raw_text.find('you can now start afresh') < 0:
-                                                    self.question_counter += 1
-                                            else:
-                                                self.question_counter = 0
-                                                test_status = 'Test Passed'
-                                                test_message = 'Test Result: ' + 'Passed'
-                                                result['input'] = question
-                                                result['status'] = test_status
-                                                if self.test_counter < len(self.conversations['tests']) - 1:
-                                                    self.test_counter += 1
-                                                    self.conversationReset = True
-                                                    self.save_result(results, result, test_status, test_message)
-                                                else:
-                                                    results['Final Test Result'] = 'Test Passed'
-                                                    self.test_counter = 0
-                                                    done = True
-                                        # if tests did not pass, set the test_status to failed and show where the test_failed using the test_message
+                    if self.conversationReset:
+                        await client.send_message(id, 'Reset')
+                        self.conversationReset = False
+                    else:
+                        result = {}
+                        testtitle = 'Test ' + self.conversations['tests'][self.test_counter][
+                            'title'] + ': '  # displayed at the status bar
+                        title = str(self.test_counter + 1) + '. ' + self.conversations['tests'][self.test_counter][
+                            'title']  # will be dispalyed in the results file
+                        question = self.conversations['tests'][self.test_counter]['questions'][
+                            self.question_counter]  # question from conversation files
+                        if event.raw_text.find('you can now start afresh') < 0:
+                            expectedResponses = self.conversations['tests'][self.test_counter]['expectedResponses'][
+                                self.question_counter]
+
+                        result['name'] = title
+                        test_message = ''
+                        test_status = ''
+                        # if any errors occur
+                        if event.sender_id == id:
+                            if event.raw_text.find('experiencing difficulty') >= 0:
+                                # bot has crashed
+                                test_message = 'Bot crashed at ' + question + '(' + str(self.question_counter) + ')'
+                                test_status = 'Failed'
+                                done = True
+                                
+                            elif event.raw_text.find('404') >= 0:
+                                # bot has crashed
+                                test_message = 'Bot unreacheable, crashed at ' + question + '(' + str(
+                                    self.question_counter) + ')'
+                                test_status = 'Failed'
+                                done = True
+                            elif event.raw_text.find('403') >= 0:
+                                # bot has crashed
+                                test_message = 'Bot\'s endpoint failed with HTTP status 403, crashed at ' + question + '(' + str(
+                                    self.question_counter) + ')'
+                                test_status = 'Failed'
+                                done = True
+                            elif event.raw_text.find('502') >= 0:
+                                # bot has crashed
+                                test_message = 'Bot connection strings wrong, Bot crashed at ' + question + '(' + str(
+                                    self.question_counter) + ')'
+                                test_status = 'Failed'
+                                done = True
+                            elif event.raw_text.find('500') >= 0:
+                                # bot has crashed
+                                test_message = 'Bot code has a problem, Bot crashed at ' + question + '(' + str(
+                                    self.question_counter) + ')'
+                                test_status = 'Failed'
+                                done = True
+                            else:
+                                if event.raw_text.find('timed out') < 0 and event.raw_text.find(
+                                        'endpoint failed') and event.raw_text.find('.jpg') < 0 and event.raw_text.find(
+                                        '.png') < 0:
+                                    if event.raw_text.find('you can now start afresh') < 0:
+                                        responses = self.getExpectedtext(expectedResponses)
+                                        # calll the string-comapre method. Compare's string in expected response and the rawText from the bot
+                                        if isinstance(responses, list):
+                                            for expectedResponse in responses:
+                                                comparisson = self.string_compare(expectedResponse,
+                                                                                re.sub('<.*>', '', event.raw_text))
+                                                if comparisson == True:
+                                                    testPassed = True
+
+                                    # if test passed, go to the next test or end the tests if the all the tests in the conversation file have been run
+                                    if testPassed:
+                                        if self.question_counter < len(
+                                                self.conversations['tests'][self.test_counter]['questions']) - 1:
+                                            if event.raw_text.find('you can now start afresh') < 0:
+                                                self.question_counter += 1
                                         else:
-                                            test_message = 'Test Failed at : ' + str(self.question_counter)
                                             self.question_counter = 0
-                                            test_status = 'Failed'
+                                            test_status = 'Test Passed'
+                                            test_message = 'Test Result: ' + 'Passed'
                                             result['input'] = question
                                             result['status'] = test_status
-
-                                            result['expected response'] = responses
-                                            result['bot response'] = event.raw_text
-
-                                            result['message'] = test_message
                                             if self.test_counter < len(self.conversations['tests']) - 1:
                                                 self.test_counter += 1
                                                 self.conversationReset = True
                                                 self.save_result(results, result, test_status, test_message)
                                             else:
-                                                results['Final Test Result'] = 'Test Failed'
+                                                results['Final Test Result'] = 'Test Passed'
                                                 self.test_counter = 0
                                                 done = True
-
-                                # if done == True, count the successful and i=unseccessful tests,save the results and disconnect from the telegram client
-                                if done:
-                                    results["results"].append(result)
-                                    end = time.time()
-                                    results["end"] = time.asctime(time.localtime(end))
-                                    results["duration"] = (end - self.start) / 100
-                                    successful = 0
-                                    unsuccessful = 0
-
-                                    for item in results["results"]:
-                                        if item['test_status'] == 'Failed':
-                                            unsuccessful += 1
-                                        else:
-                                            successful += 1
-
-                                    results["successful"] = successful
-                                    results["unsuccessful"] = unsuccessful
-                                    final_status = "Failed" if unsuccessful > 0 else "Passed"
-                                    self.save_result(results, {}, final_status, test_message)
-                                    await client.disconnect()
-
-                                # if tests are not done, continue with the next tests
-                                else:
-                                    if self.conversationReset is False:
-                                        if event.raw_text.find('is likely') < 0 and event.raw_text.find(
-                                                'timed out') < 0 and event.raw_text.find(
-                                                'endpoint failed') and event.raw_text.find(
-                                                '.jpg') < 0 and event.raw_text.find('.png') < 0:
-                                            question = self.conversations['tests'][self.test_counter]['questions'][
-                                                self.question_counter]
-                                            if question:
-                                                await event.reply(question)
+                                    # if tests did not pass, set the test_status to failed and show where the test_failed using the test_message
                                     else:
-                                        if event.raw_text.find('is likely') < 0:
-                                            await client.send_message(id, 'Reset')
-                                            self.conversationReset = False
-                    except Exception as e:
-                        tb = traceback.format_exc()
-                        print(e)
-                        await client.disconnect()
-                    else:
-                        tb = "No error"
-                    finally:
-                        print(tb)
+                                        test_message = 'Test Failed at : ' + str(self.question_counter)
+                                        self.question_counter = 0
+                                        test_status = 'Failed'
+                                        result['input'] = question
+                                        result['status'] = test_status
 
-                
-                await client.run_until_disconnected()
+                                        result['expected response'] = responses
+                                        result['bot response'] = event.raw_text
+
+                                        result['message'] = test_message
+                                        if self.test_counter < len(self.conversations['tests']) - 1:
+                                            self.test_counter += 1
+                                            self.conversationReset = True
+                                            self.save_result(results, result, test_status, test_message)
+                                        else:
+                                            results['Final Test Result'] = 'Test Failed'
+                                            self.test_counter = 0
+                                            done = True
+
+                            # if done == True, count the successful and i=unseccessful tests,save the results and disconnect from the telegram client
+                            if done:
+                                results["results"].append(result)
+                                end = time.time()
+                                results["end"] = time.asctime(time.localtime(end))
+                                results["duration"] = (end - self.start) / 100
+                                successful = 0
+                                unsuccessful = 0
+
+                                for item in results["results"]:
+                                    if item['test_status'] == 'Failed':
+                                        unsuccessful += 1
+                                    else:
+                                        successful += 1
+
+                                results["successful"] = successful
+                                results["unsuccessful"] = unsuccessful
+                                final_status = "Failed" if unsuccessful > 0 else "Passed"
+                                self.save_result(results, {}, final_status, test_message)
+                                await client.disconnect()
+
+                            # if tests are not done, continue with the next tests
+                            else:
+                                if self.conversationReset is False:
+                                    if event.raw_text.find('is likely') < 0 and event.raw_text.find(
+                                            'timed out') < 0 and event.raw_text.find(
+                                            'endpoint failed') and event.raw_text.find(
+                                            '.jpg') < 0 and event.raw_text.find('.png') < 0:
+                                        question = self.conversations['tests'][self.test_counter]['questions'][
+                                            self.question_counter]
+                                        if question:
+                                            await event.reply(question)
+                                else:
+                                    if event.raw_text.find('is likely') < 0:
+                                        await client.send_message(id, 'Reset')
+                                        self.conversationReset = False
+                except Exception as e:
+                    tb = traceback.format_exc()
+                    print(e)
+                    await client.disconnect()
+                else:
+                    tb = "No error"
+                finally:
+                    print(tb)
+
+            
+            await client.run_until_disconnected()
 
 @app.route("/file", methods = ['POST'])
 async def jsonfile():

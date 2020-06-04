@@ -38,7 +38,7 @@ onFileUpload = () => {
       'Access-Control-Allow-Origin': '*'
     }
   }
-  axios.post('http://localhost:5000/send', axiosConfig)
+  axios.post('http://localhost:5000/send', this.state.fileJson, axiosConfig)
 };
 
 // File content to be displayed after

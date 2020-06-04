@@ -4,7 +4,7 @@ import Button from '@material-ui/core/Button'
 
 class Run extends Component {
         onRunTest = event => {
-          axios.post('http://localhost:5000/')
+          axios.post('http://localhost:5000/send')
         };
 
         render () {

@@ -7,6 +7,7 @@ import Button from '@material-ui/core/Button'
 import Typography from '@material-ui/core/Typography'
 import Upload from './smsupload'
 import Run from './smsrun'
+import Creds from './smscreds'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -25,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 function getSteps () {
-  return ['Upload json file', 'Run Test', 'Complete test']
+  return ['Upload json file', 'Enter your details', 'Run Test', 'Complete test']
 }
 
 function getStepContent (stepIndex) {
@@ -33,8 +34,10 @@ function getStepContent (stepIndex) {
     case 0:
       return <Upload/>
     case 1:
-      return <Run/>
+      return <Creds/>
     case 2:
+      return <Run/>
+    case 3:
       return 'Complete the test'
     default:
       return 'Unknown stepIndex'

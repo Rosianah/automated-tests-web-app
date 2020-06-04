@@ -3,6 +3,7 @@ import requests
 import logging, json, os, telethon.sync, time, difflib, re, traceback, Levenshtein, asyncio
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s', level=logging.WARNING)
 from quart_cors import cors
+from configparser import ConfigParser
 
 app = Quart(__name__) # create an app instance
 app = cors(app, allow_origin="*")
@@ -23,9 +24,17 @@ class SMSInterface():
 
      #Function to post the message
     def post(self, text):
+
+        config_object = ConfigParser()
+        config_object.read("config.ini")
+        SMSinfo = config_object['SMSINFO']
+        _to = format(SMSinfo["code"])
+        _from = format(SMSinfo["phone_number"])
+        print(_to, _from)
+
         data = {
-            "from": "+254710535946",
-            "to": "40248",
+            "from": _from,
+            "to": _to,
             "text": text
         }
         res = requests.post(self.url, json=data)
@@ -114,11 +123,13 @@ class SMSInterface():
         res.close
 
     async def run_test(self):
-        # conversations from TelegramInterface.selectfile
+        self.start = time.time()
         self.question_counter = 0
         self.test_counter = 0
         # reset conversation if not conversation reset is true
-        results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 'conversations': len(session.get('conversations')['tests'])}
+
+        #print(session.get('conversations'))
+        #results = {'results': [], 'start': time.asctime(time.localtime(self.start)), 'conversations': len(session.get('conversations')['tests'])}
 
         if self.conversationReset is False:
             self.post(session.get('conversations')['tests'][self.test_counter]['questions'][self.question_counter])
@@ -236,10 +247,10 @@ class SMSInterface():
                         self.conversationReset = False
 
 
-@app.route("/file") 
-def getFile(self):
-    self.conversations = request.json
-    print(self.conversations)
+@app.route("/file", methods = ['POST']) 
+async def getFile():
+    session['conversations'] =  await request.json
+    print(session.get('conversations'))
     return "Ok", 200
 
 #receive from the webhook // run ngrok first https:ngrok.io/tshdjsau7/receive (Put smthing like that in webhook app)
@@ -255,7 +266,8 @@ async def send():
     session['conversations'] = await request.json
     print(session.get('conversations'))
     server = SMSInterface()
-    server.post("1")
+    await server.run_test()
+    server.post("Hi")
     await fetchText()
     return "Ok", 200
 
